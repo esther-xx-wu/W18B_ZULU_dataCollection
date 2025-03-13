@@ -1,8 +1,10 @@
-# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# This workflow will lint, run tests, and type check with Python 3.11
 
 name: Build and test app
 
 on:
+  push:
+    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
@@ -36,3 +38,6 @@ jobs:
     - name: Run tests and report coverage
       run: |
         pytest --cov-report term-missing --cov=myproj tests/
+
+    - name: Run type checking with mypy
+      run: mypy ../../ --check-untyped-defs --disable-error-code=import-untyped
