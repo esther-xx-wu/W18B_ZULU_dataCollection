@@ -11,7 +11,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@
+
     - name: Set up Python 3.11
       uses: actions/setup-python@v3
       with:
@@ -30,9 +31,15 @@ jobs:
       run: ruff format --diff
       continue-on-error: true
 
-    - name: Run tests and report coverage
+    - name: Run tests and generate coverage report
       run: |
-        pytest --cov-report term-missing --cov=myproj tests/
+        pytest --junitxml=pytest.xml --cov-report=term-missing --cov=src tests/ | tee pytest-coverage.txt
+
+    - name: Comment on coverage report
+      uses: MishaKav/pytest-coverage-comment@main
+      with:
+        pytest-coverage-path: ./pytest-coverage.txt
+        junitxml-path: ./pytest.xml
 
     - name: Run type checking with mypy
-      run: mypy ../../ --check-untyped-defs --disable-error-code=import-untyped
+      run: mypy src --check-untyped-defs --disable-error-code=import-untyped
