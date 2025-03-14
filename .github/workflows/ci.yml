@@ -38,12 +38,12 @@ jobs:
 
     - name: Run tests and generate coverage report
       run: |
-        pytest --junitxml=pytest.xml --cov-report=term-missing --cov=src tests/ | tee pytest-coverage.txt
+        pytest --junitxml=pytest.xml --cov-report term-missing --cov-report xml:coverage.xml --cov=src tests/
 
     - name: Comment on coverage report
       uses: MishaKav/pytest-coverage-comment@main
       with:
-        pytest-coverage-path: ./pytest-coverage.txt
+        pytest-xml-coverage-path: ./coverage.xml
         junitxml-path: ./pytest.xml
 
     - name: Run type checking with mypy
