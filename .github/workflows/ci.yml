@@ -1,4 +1,4 @@
-# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# This workflow will lint, run tests, and type check with Python 3.11
 
 name: Build and test app
 
@@ -6,15 +6,18 @@ on:
   pull_request:
     branches: [ "main" ]
 
-permissions:
-  contents: read
-
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      checks: write
+      pull-requests: write
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
+
     - name: Set up Python 3.11
       uses: actions/setup-python@v3
       with:
@@ -23,7 +26,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pytest pytest-cov mypy
+        pip install ruff pytest pytest-cov mypy
         pip install -r requirements.txt
 
     - name: Lint with Ruff
@@ -33,6 +36,15 @@ jobs:
       run: ruff format --diff
       continue-on-error: true
 
-    - name: Run tests and report coverage
+    - name: Run tests and generate coverage report
       run: |
-        pytest --cov-report term-missing --cov=myproj tests/
+        pytest --junitxml=pytest.xml --cov-report=term-missing --cov=src tests/ | tee pytest-coverage.txt
+
+    - name: Comment on coverage report
+      uses: MishaKav/pytest-coverage-comment@main
+      with:
+        pytest-coverage-path: ./pytest-coverage.txt
+        junitxml-path: ./pytest.xml
+
+    - name: Run type checking with mypy
+      run: mypy src --check-untyped-defs --disable-error-code=import-untyped
