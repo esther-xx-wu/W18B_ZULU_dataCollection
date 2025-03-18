@@ -12,9 +12,9 @@ TRANSPORT_API_KEY = os.getenv("TRANSPORT_API_KEY")
 S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 aws_access_key = os.getenv("AWS_ACCESS_KEY_ID")
 aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
-aws_region = os.getenv("AWS_DEFAULT_REGION", "us-east-1")
+aws_region = os.getenv("AWS_DEFAULT_REGION", "us-east-2")
 
-s3_client = boto3.client(
+s3_client = boto3.resource(
     "s3",
     aws_access_key_id=aws_access_key,
     aws_secret_access_key=aws_secret_key,
@@ -42,7 +42,7 @@ def fetch_traffic_data(suburb):
     
     response = requests.get(
         TRAFFIC_API_ENDPOINT,
-        params={"format": "json", "q": query},
+        params={"format": "csv", "q": query},
         headers=headers
     )
     
@@ -52,10 +52,11 @@ def fetch_traffic_data(suburb):
     return response.text
 
 # Helper Function to Upload CSV Data to S3 bucket
-# def upload_to_s3(csv_data, suburb):
-#     file_name = f"{suburb}_traffic_data.csv"
-#     try:
-#         s3_client.put_object(Bucket=S3_BUCKET_NAME, Key=file_name, Body=csv_data)
-#         return f"s3://{S3_BUCKET_NAME}/{file_name}"
-#     except (NoCredentialsError, ClientError) as e:
-#         raise Exception(f"S3 Upload Failed: {str(e)}")
+def upload_to_s3(csv_data, suburb):
+    file_name = f"{suburb}_traffic_data.csv"
+    try:
+        # s3_client.put_object(Bucket=S3_BUCKET_NAME, Key=file_name, Body=csv_data)
+        s3_client.Bucket(S3_BUCKET_NAME).put_object(Key=file_name, Body=csv_data)
+        return f"s3://{S3_BUCKET_NAME}/{file_name}"
+    except (NoCredentialsError, ClientError) as e:
+        raise Exception(f"S3 Upload Failed: {str(e)}")
