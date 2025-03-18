@@ -47,4 +47,10 @@ jobs:
         junitxml-path: ./pytest.xml
 
     - name: Run type checking with mypy
+      run: |
+        export MYPYPATH=src
+        mypy src --check-untyped-defs --disable-error-code=import-untyped
+      continue-on-error: true
+  
+    - name: Run type checking with mypy
       run: mypy src --check-untyped-defs --disable-error-code=import-untyped
