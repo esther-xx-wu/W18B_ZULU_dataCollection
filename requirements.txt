@@ -5,6 +5,7 @@ botocore==1.37.13
 certifi==2025.1.31
 charset-normalizer==3.4.1
 click==8.1.8
+dotenv==0.9.9
 Flask==3.1.0
 httptools==0.6.4
 idna==3.10
@@ -12,12 +13,16 @@ itsdangerous==2.2.0
 Jinja2==3.1.6
 jmespath==1.0.1
 MarkupSafe==3.0.2
+numpy==2.2.4
+pandas==2.2.3
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
+pytz==2025.2
 requests==2.32.3
 s3transfer==0.11.4
 six==1.17.0
 typing_extensions==4.12.2
+tzdata==2025.2
 urllib3==2.3.0
 uvloop==0.21.0
 websockets==15.0.1

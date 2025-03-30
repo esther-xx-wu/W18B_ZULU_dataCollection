@@ -3,7 +3,10 @@ import requests
 import boto3
 import os
 from dotenv import load_dotenv
+import random
 from botocore.exceptions import NoCredentialsError, ClientError
+import pandas as pd
+from io import StringIO
 
 load_dotenv()
 
@@ -32,7 +35,7 @@ def fetch_traffic_data(suburb):
     WHERE rc.suburb = '{suburb}'
     GROUP BY rt.date
     ORDER BY rt.date DESC
-    LIMIT 30;
+    LIMIT 31;
     """
 
     headers = {
@@ -49,11 +52,17 @@ def fetch_traffic_data(suburb):
     if response.status_code != 200:
         raise Exception(f"Failed to fetch data: {response.status_code} - {response.text}")
     
-    return response.text
+
+    csv_data = pd.read_csv(StringIO(response.text))
+    
+    # Format date column to remove redundant time element
+    csv_data['date'] = pd.to_datetime(csv_data['date']).dt.strftime('%d-%b-%Y')
+    
+    return csv_data.to_csv(index=False)
 
 # Helper Function to Upload CSV Data to S3 bucket
 def upload_to_s3(csv_data, suburb):
-    file_name = f"{suburb}_traffic_data.csv"
+    file_name = f"{suburb}_traffic_data_{random.randint(10, 100)}.csv"
     try:
         # s3_client.put_object(Bucket=S3_BUCKET_NAME, Key=file_name, Body=csv_data)
         s3_client.Bucket(S3_BUCKET_NAME).put_object(Key=file_name, Body=csv_data)

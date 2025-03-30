@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, make_response
 import awsgi
 from collection import fetch_traffic_data, upload_to_s3
 
@@ -8,7 +8,7 @@ app = Flask(__name__)
 def home():
     return jsonify(message="Hello from Flask on AWS Lambda!")
 
-@app.route('/upload_traffic_data', methods=['GET'])
+@app.route('/traffic/single/v1', methods=['GET'])
 def upload_traffic_data():
     try:
         suburb = request.args.get('suburb')
@@ -16,8 +16,12 @@ def upload_traffic_data():
             return jsonify({"error": "Suburb is required"}), 400
         
         csv_data = fetch_traffic_data(suburb)
-        s3_url = upload_to_s3(csv_data, suburb)
-        return jsonify({"message": "Data uploaded successfully", "s3_url": s3_url})
+        # s3_url = upload_to_s3(csv_data, suburb)
+
+        resp = make_response(csv_data)
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        resp.headers['Content-Type'] = 'text/csv'
+        return resp
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
