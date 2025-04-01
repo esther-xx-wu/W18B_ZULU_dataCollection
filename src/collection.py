@@ -26,7 +26,7 @@ s3_client = boto3.resource(
 TRAFFIC_API_ENDPOINT = "https://api.transport.nsw.gov.au/v1/traffic_volume"
 
 # Helper Function to Call Transport NSW API and Get CSV Data
-def fetch_traffic_data(suburb):
+def fetch_traffic_data(suburb, numDays):
     query = f"""
     SELECT rt.date, SUM(rt.daily_total) AS total_daily_traffic
     FROM road_traffic_counts_hourly_permanent rt
@@ -35,7 +35,7 @@ def fetch_traffic_data(suburb):
     WHERE rc.suburb = '{suburb}'
     GROUP BY rt.date
     ORDER BY rt.date DESC
-    LIMIT 31;
+    LIMIT {numDays};
     """
 
     headers = {
