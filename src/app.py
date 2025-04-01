@@ -22,7 +22,7 @@ def handle_single_suburb_traffic():
         numDays = int(request.args.get('numDays'))
 
         csv_data = fetch_traffic_data(suburb, numDays)
-        # s3_url = upload_to_s3(csv_data, suburb)
+        upload_to_s3(csv_data, suburb)
 
         resp = make_response(csv_data)
         resp.headers['Access-Control-Allow-Origin'] = '*'
