@@ -48,7 +48,7 @@ class TestLambdaFunction(unittest.TestCase):
             region_name="us-east-2"
         )
         
-        # Create the mock S3 bucket
+        # Mock S3 bucket
         bucket_name = "test-bucket"
         s3.create_bucket(
             Bucket=bucket_name, 
@@ -86,14 +86,14 @@ class TestLambdaFunction(unittest.TestCase):
 
     def test_missing_numDays_parameter(self):
         """Test API validates missing numDays parameter"""
-        response = self.app.get('/traffic/single/v1?suburb=Sydney')
+        response = self.app.get('/traffic/single/v1?suburb=Blacktown')
         self.assertEqual(response.status_code, 400)
         data = json.loads(response.data)
         self.assertEqual(data['error'], 'Number of days is required')
 
     def test_invalid_numDays_parameter(self):
         """Test API validates invalid numDays parameter"""
-        response = self.app.get('/traffic/single/v1?suburb=Sydney&numDays=abc')
+        response = self.app.get('/traffic/single/v1?suburb=Blacktown&numDays=abc')
         self.assertEqual(response.status_code, 400)
         data = json.loads(response.data)
         self.assertEqual(data['error'], 'Number of days must be a valid integer!')
@@ -104,7 +104,7 @@ class TestLambdaFunction(unittest.TestCase):
         mock_get.return_value.status_code = 403
         mock_get.return_value.text = "API key invalid"
         
-        response = self.app.get('/traffic/single/v1?suburb=Hornsby&numDays=2')
+        response = self.app.get('/traffic/single/v1?suburb=Chatswood&numDays=2')
         self.assertEqual(response.status_code, 500)
         data = json.loads(response.data)
         self.assertIn('Failed to fetch data', data['error'])
