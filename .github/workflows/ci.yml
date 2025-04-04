@@ -51,7 +51,14 @@ jobs:
         export MYPYPATH=src
         mypy src --check-untyped-defs --disable-error-code=import-untyped
       continue-on-error: true
-  
+
     - name: Run type checking with mypy
       run: mypy src --check-untyped-defs --disable-error-code=import-untyped
       continue-on-error: true
+
+  staging:
+    runs-on:
+      - codebuild-traffic-test-${{ github.run_id }}-${{ github.run_attempt }}
+
+    steps:
+      - run: echo "Running staging/tests job"
