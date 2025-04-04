@@ -1,63 +1,78 @@
-import unittest
+import os
+import sys
+import pytest
 import json
 from unittest.mock import patch, MagicMock
-from src.collection import fetch_traffic_data
 
-class TestFetchTrafficData(unittest.TestCase):
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../src"))
+sys.path.append(parent_dir)
 
-    @patch("src.collection.requests.get")
-    @patch("src.collection.upload_to_s3")
-    def test_fetch_traffic_data_success(self, mock_upload, mock_requests):
-        """Test successful data retrieval"""
-        suburb = "Liverpool"
-        numDays = "2"
+try:
+    from collection import fetch_traffic_data
+except ImportError:
+    pytest.skip(reason="could not import fetch_traffic_data", allow_module_level=True)
 
-        # Mock API response
-        mock_csv = "date,total_daily_traffic\n2025-04-01,15000\n2025-03-31,14500"
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.text = mock_csv
-        mock_requests.return_value = mock_response
+@pytest.fixture
+def mock_requests():
+    """Fixture to mock requests.get"""
+    with patch("collection.requests.get") as mock:
+        yield mock
 
-        result_json = fetch_traffic_data(suburb, numDays)
-        result = json.loads(result_json)
-        self.assertIsInstance(result, list)
-        self.assertEqual(len(result), 2)
-        self.assertIn("date", result[0])
-        self.assertIn("total_daily_traffic", result[0])
+@pytest.fixture
+def mock_upload():
+    """Fixture to mock upload_to_s3"""
+    with patch("collection.upload_to_s3") as mock:
+        yield mock
 
-        self.assertEqual(result[0]["date"], "01-Apr-2025")
-        self.assertEqual(result[0]["total_daily_traffic"], 15000)
+def test_fetch_traffic_data_success(mock_requests, mock_upload):
+    """Test successful data retrieval"""
+    suburb = "Liverpool"
+    numDays = "2"
 
-        mock_upload.assert_called_once()
+    # Mock API response
+    mock_csv = "date,total_daily_traffic\n2025-04-01,15000\n2025-03-31,14500"
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.text = mock_csv
+    mock_requests.return_value = mock_response
 
-    def test_fetch_traffic_data_missing_suburb(self):
-        """Test missing suburb"""
-        result_json = fetch_traffic_data("", "5")
-        result = json.loads(result_json)
-        self.assertEqual(result["error"], "Suburb is required")
-        self.assertEqual(result["code"], 400)
+    result_json = fetch_traffic_data(suburb, numDays)
+    result = json.loads(result_json)
 
-    def test_fetch_traffic_data_missing_numDays(self):
-        """Test missing numDays"""
-        result_json = fetch_traffic_data("Liverpool", "")
-        result = json.loads(result_json)
-        self.assertEqual(result["error"], "Number of days is required")
-        self.assertEqual(result["code"], 400)
+    assert isinstance(result, list)
+    assert len(result) == 2
+    assert "date" in result[0]
+    assert "total_daily_traffic" in result[0]
 
-    def test_fetch_traffic_data_invalid_numDays(self):
-        """Test non-numeric numDays"""
-        result_json = fetch_traffic_data("Liverpool", "abc")
-        result = json.loads(result_json)
-        self.assertEqual(result["error"], "Number of days must be a valid integer!")
-        self.assertEqual(result["code"], 400)
-        
-    def test_fetch_traffic_data_invalid_params_multiple(self):
-        """Test multiple invalid params"""
-        result_json = fetch_traffic_data("", "abc")
-        result = json.loads(result_json)
-        self.assertEqual(result["error"], "Suburb is required")
-        self.assertEqual(result["code"], 400)
+    assert result[0]["date"] == "01-Apr-2025"
+    assert result[0]["total_daily_traffic"] == 15000
 
-if __name__ == "__main__":
-    unittest.main()
+    mock_upload.assert_called_once()
+
+def test_fetch_traffic_data_missing_suburb():
+    """Test missing suburb"""
+    result_json = fetch_traffic_data("", "5")
+    result = json.loads(result_json)
+    assert result["error"] == "Suburb is required"
+    assert result["code"] == 400
+
+def test_fetch_traffic_data_missing_numDays():
+    """Test missing numDays"""
+    result_json = fetch_traffic_data("Liverpool", "")
+    result = json.loads(result_json)
+    assert result["error"] == "Number of days is required"
+    assert result["code"] == 400
+
+def test_fetch_traffic_data_invalid_numDays():
+    """Test non-numeric numDays"""
+    result_json = fetch_traffic_data("Liverpool", "abc")
+    result = json.loads(result_json)
+    assert result["error"] == "Number of days must be a valid integer!"
+    assert result["code"] == 400
+
+def test_fetch_traffic_data_invalid_params_multiple():
+    """Test multiple invalid params"""
+    result_json = fetch_traffic_data("", "abc")
+    result = json.loads(result_json)
+    assert result["error"] == "Suburb is required"
+    assert result["code"] == 400
