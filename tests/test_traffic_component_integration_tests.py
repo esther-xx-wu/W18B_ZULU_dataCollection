@@ -6,12 +6,14 @@ import sys
 from unittest.mock import patch, MagicMock
 from moto import mock_aws
 import requests_mock
+import importlib
 
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(parent_dir)
 
 try:
     from src.app import app
+    import src.collection
 except ImportError:
     unittest.skip(reason="could not import fetch_traffic_data", allow_module_level=True)
 
@@ -33,8 +35,6 @@ class TestLambdaFunction(unittest.TestCase):
         ]
         self.raw_csv_data = "date,total_daily_traffic\n2025-04-01T00:00:00,15000\n2025-03-31T00:00:00,14500"
 
-        import importlib
-        import src.collection
         importlib.reload(src.collection)
 
 
