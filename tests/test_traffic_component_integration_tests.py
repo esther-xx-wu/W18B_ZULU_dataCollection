@@ -6,13 +6,12 @@ import sys
 from unittest.mock import patch, MagicMock
 from moto import mock_aws
 import requests_mock
-from src.app import app
 
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../src"))
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(parent_dir)
 
 try:
-    from app import app
+    from src.app import app
 except ImportError:
     unittest.skip(reason="could not import fetch_traffic_data", allow_module_level=True)
 
@@ -69,6 +68,8 @@ class TestLambdaFunction(unittest.TestCase):
                       text=self.raw_csv_data)
               
                 response = self.app.get('/traffic/single/v1?suburb=Hornsby&numDays=2')
+                
+                print(response.data)
                 
                 self.assertEqual(response.status_code, 200)
                 self.assertEqual(response.headers['Content-Type'], 'application/json')
