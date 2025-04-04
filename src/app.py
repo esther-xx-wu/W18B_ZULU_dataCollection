@@ -1,7 +1,7 @@
-from flask import Flask, jsonify, request, make_response, Response
+from flask import Flask, jsonify, request, make_response
 import awsgi
 import json
-from src.collection import fetch_traffic_data, upload_to_s3
+from src.collection import fetch_traffic_data
 
 app = Flask(__name__)
 

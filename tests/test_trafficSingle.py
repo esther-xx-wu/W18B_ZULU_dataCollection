@@ -1,6 +1,5 @@
 import unittest
 import json
-import pandas as pd
 from unittest.mock import patch, MagicMock
 from src.collection import fetch_traffic_data
 

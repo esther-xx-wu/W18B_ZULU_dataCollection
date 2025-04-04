@@ -1,4 +1,3 @@
-from flask import Flask, request, jsonify
 import requests
 import boto3
 import os
