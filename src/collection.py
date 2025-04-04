@@ -1,4 +1,4 @@
-# from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify
 import requests
 import boto3
 import os
@@ -7,6 +7,8 @@ import random
 from botocore.exceptions import NoCredentialsError, ClientError
 import pandas as pd
 from io import StringIO
+import json
+
 
 load_dotenv()
 
@@ -27,6 +29,15 @@ s3_client = boto3.resource(
 
 # Helper Function to Call Transport NSW API and Get CSV Data
 def fetch_traffic_data(suburb, numDays):
+    if not suburb:
+        return json.dumps({"error": "Suburb is required", "code": 400})
+    elif not numDays:
+        return json.dumps({"error": "Number of days is required", "code": 400})
+    elif not numDays.isdigit():
+        return json.dumps({"error": "Number of days must be a valid integer!", "code": 400})
+    
+    numDays = int(numDays)
+    
     query = f"""
     SELECT rt.date, SUM(rt.daily_total) AS total_daily_traffic
     FROM road_traffic_counts_hourly_permanent rt
@@ -52,13 +63,13 @@ def fetch_traffic_data(suburb, numDays):
     if response.status_code != 200:
         raise Exception(f"Failed to fetch data: {response.status_code} - {response.text}")
     
-
     csv_data = pd.read_csv(StringIO(response.text))
     
     # Format date column to remove redundant time element
     csv_data['date'] = pd.to_datetime(csv_data['date']).dt.strftime('%d-%b-%Y')
+    upload_to_s3(csv_data.to_csv(index=False), suburb)
     
-    return csv_data.to_csv(index=False)
+    return csv_data.to_json(orient="records")
 
 # Helper Function to Upload CSV Data to S3 bucket
 def upload_to_s3(csv_data, suburb):
