@@ -46,6 +46,15 @@ jobs:
         pytest-xml-coverage-path: ./coverage.xml
         junitxml-path: ./pytest.xml
 
+    - name: Upload pytest and coverage reports artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: pytest-reports-artifact
+        path: |
+          ./pytest.xml
+          ./coverage.xml
+        if-no-files-found: error
+
     - name: Run type checking with mypy
       run: |
         export MYPYPATH=src
