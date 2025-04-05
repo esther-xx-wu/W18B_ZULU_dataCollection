@@ -15,9 +15,9 @@ load_dotenv()
 TRANSPORT_API_KEY = os.getenv("TRANSPORT_API_KEY")
 TRAFFIC_API_ENDPOINT = "https://api.transport.nsw.gov.au/v1/traffic_volume"
 S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
-aws_access_key = os.getenv("AWS_ACCESS_KEY_ID")
-aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
-aws_region = os.getenv("AWS_DEFAULT_REGION", "us-east-2")
+aws_access_key = os.getenv("ACCESS_KEY")
+aws_secret_key = os.getenv("SECRET_KEY")
+aws_region = os.getenv("REGION", "us-east-2")
 
 s3_client = boto3.resource(
     "s3",

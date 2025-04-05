@@ -27,9 +27,9 @@ def set_env_vars():
     """Fixture to set environment variables and reload app for testing."""
     os.environ["TRANSPORT_API_KEY"] = "fake-api-key"
     os.environ["S3_BUCKET_NAME"] = "test-bucket"
-    os.environ["AWS_ACCESS_KEY_ID"] = "fake-access-key"
-    os.environ["AWS_SECRET_ACCESS_KEY"] = "fake-secret-key"
-    os.environ["AWS_DEFAULT_REGION"] = "us-east-2"
+    os.environ["ACCESS_KEY"] = "fake-access-key"
+    os.environ["SECRET_KEY"] = "fake-secret-key"
+    os.environ["REGION"] = "us-east-2"
 
     importlib.reload(src.collection)
 
