@@ -1,6 +1,7 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, make_response
 import awsgi
-from collection import fetch_traffic_data, upload_to_s3
+import json
+from src.collection import fetch_traffic_data
 
 app = Flask(__name__)
 
@@ -8,20 +9,23 @@ app = Flask(__name__)
 def home():
     return jsonify(message="Hello from Flask on AWS Lambda!")
 
-@app.route('/upload_traffic_data', methods=['GET'])
-def upload_traffic_data():
+@app.route('/traffic/single/v1', methods=['GET'])
+def handle_single_suburb_traffic():
     try:
         suburb = request.args.get('suburb')
-        if not suburb:
-            return jsonify({"error": "Suburb is required"}), 400
-        
-        csv_data = fetch_traffic_data(suburb)
-        s3_url = upload_to_s3(csv_data, suburb)
-        return jsonify({"message": "Data uploaded successfully", "s3_url": s3_url})
+        numDays = request.args.get('numDays')
+        traffic_data = fetch_traffic_data(suburb, numDays)
+        traffic_data_json = json.loads(traffic_data)
+        if "error" in traffic_data_json:
+            return jsonify({"error": traffic_data_json["error"]}), traffic_data_json["code"]
+
+        resp = make_response(traffic_data)
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        resp.headers['Content-Type'] = 'application/json'
+        return resp
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 def lambda_handler(event, context):
     return awsgi.response(app, event, context, base64_content_types={"image/png"})
