@@ -43,7 +43,7 @@ jobs:
       - name: Create Lambda Layer
         run: |
           mkdir -p python/lib/python3.12/site-packages
-          pip install -r requirements.txt -t python/lib/python3.12/site-packages
+          pip install -r src/requirements.txt -t python/lib/python3.12/site-packages
           zip -r lambda-layer.zip python
           cd ..
         
