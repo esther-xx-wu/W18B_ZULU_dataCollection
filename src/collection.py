@@ -69,7 +69,7 @@ def fetch_traffic_data(suburb, numDays):
         if 'date' in row and row['date']:
             try:
                 parsed_date = parser.parse(row['date'])
-                row['date'] = parsed_date.strftime('%d %b %Y')  # e.g. 25 Oct 2021
+                row['date'] = parsed_date.strftime('%d-%b-%Y')  # e.g. 25 Oct 2021
             except (ValueError, TypeError):
                 pass  # leave it unchanged if parsing fails
 
