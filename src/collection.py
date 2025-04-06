@@ -75,6 +75,12 @@ def fetch_traffic_data(suburb, numDays):
                 row['date'] = parsed_date.strftime('%d-%b-%Y')
             except (ValueError, TypeError):
                 pass
+        
+        if 'total_daily_traffic' in row:
+            try:
+                row['total_daily_traffic'] = int(row['total_daily_traffic'])
+            except ValueError:
+                row['total_daily_traffic'] = 0
 
         rows.append(row)
 
