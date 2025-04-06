@@ -60,6 +60,10 @@ def fetch_traffic_data(suburb, numDays):
         headers=headers
     )
     
+    if response.status_code != 200:
+        message = response.text.get("ErrorDetails", {}).get("Message", "No message found")
+        raise Exception(f"Failed to fetch data: {message}")
+
     csv_file = StringIO(response.text)
     reader = csv.DictReader(csv_file)
     rows = []

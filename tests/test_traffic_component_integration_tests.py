@@ -85,17 +85,38 @@ def test_successful_api_call(client, raw_csv_data):
             assert files[0].key.startswith("Hornsby_traffic_data_")
             assert files[0].key.endswith(".csv")
 
+@mock_aws
 @patch("src.collection.requests.get")
 def test_transport_api_error(mock_get, client):
-    """Test handling of Transport API errors."""
-    mock_get.return_value.status_code = 403
-    mock_get.return_value.text = "API key invalid"
+    s3 = boto3.resource(
+        "s3",
+        aws_access_key_id="fake-access-key",
+        aws_secret_access_key="fake-secret-key",
+        region_name="us-east-2"
+    )
 
-    response = client.get('/traffic/single/v1?suburb=Chatswood&numDays=2')
+    bucket_name = "test-bucket"
+    s3.create_bucket(
+        Bucket=bucket_name,
+        CreateBucketConfiguration={"LocationConstraint": "us-east-2"}
+    )
+    
+    with patch("src.collection.s3_client", s3):
+        """Test handling of Transport API errors."""
+        mock_get.return_value.status_code = 403
+        mock_get.return_value.text = {
+            "ErrorDetails": {
+                "Message": "The calling application is unauthenticated.",
+                "RequestMethod": "GET"
+            }
+        }
+        response = client.get('/traffic/single/v1?suburb=Chatswood&numDays=2')
 
-    assert response.status_code == 500
-    data = json.loads(response.data)
-    assert "Failed to fetch data" in data["error"]
+        assert response.status_code == 500
+        print('dkslcnsdkncdsc')
+        data = json.loads(response.data)
+        print(data)
+        assert "Failed to fetch data" in data["error"]
 
 @mock_aws
 @patch("src.collection.requests.get")
