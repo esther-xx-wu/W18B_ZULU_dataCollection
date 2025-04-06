@@ -65,17 +65,15 @@ def fetch_traffic_data(suburb, numDays):
     rows = []
 
     for row in reader:
-        # Format the date field
         if 'date' in row and row['date']:
             try:
                 parsed_date = parser.parse(row['date'])
-                row['date'] = parsed_date.strftime('%d-%b-%Y')  # e.g. 25 Oct 2021
+                row['date'] = parsed_date.strftime('%d-%b-%Y')
             except (ValueError, TypeError):
-                pass  # leave it unchanged if parsing fails
+                pass
 
         rows.append(row)
 
-    # Convert back to CSV string for upload
     csv_file_out = StringIO()
     writer = csv.DictWriter(csv_file_out, fieldnames=reader.fieldnames)
     writer.writeheader()
