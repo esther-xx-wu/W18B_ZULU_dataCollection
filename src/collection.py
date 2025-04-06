@@ -4,9 +4,10 @@ import os
 from dotenv import load_dotenv
 import random
 from botocore.exceptions import NoCredentialsError, ClientError
-import pandas as pd
 from io import StringIO
 import json
+import csv
+from dateutil import parser
 
 
 load_dotenv()
@@ -59,16 +60,30 @@ def fetch_traffic_data(suburb, numDays):
         headers=headers
     )
     
-    if response.status_code != 200:
-        raise Exception(f"Failed to fetch data: {response.status_code} - {response.text}")
-    
-    csv_data = pd.read_csv(StringIO(response.text))
-    
-    # Format date column to remove redundant time element
-    csv_data['date'] = pd.to_datetime(csv_data['date']).dt.strftime('%d-%b-%Y')
-    upload_to_s3(csv_data.to_csv(index=False), suburb)
-    
-    return csv_data.to_json(orient="records")
+    csv_file = StringIO(response.text)
+    reader = csv.DictReader(csv_file)
+    rows = []
+
+    for row in reader:
+        # Format the date field
+        if 'date' in row and row['date']:
+            try:
+                parsed_date = parser.parse(row['date'])
+                row['date'] = parsed_date.strftime('%d %b %Y')  # e.g. 25 Oct 2021
+            except (ValueError, TypeError):
+                pass  # leave it unchanged if parsing fails
+
+        rows.append(row)
+
+    # Convert back to CSV string for upload
+    csv_file_out = StringIO()
+    writer = csv.DictWriter(csv_file_out, fieldnames=reader.fieldnames)
+    writer.writeheader()
+    writer.writerows(rows)
+
+    upload_to_s3(csv_file_out.getvalue(), suburb)
+
+    return json.dumps(rows)
 
 # Helper Function to Upload CSV Data to S3 bucket
 def upload_to_s3(csv_data, suburb):
