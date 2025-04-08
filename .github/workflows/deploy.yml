@@ -3,7 +3,8 @@ name: Deploy app to AWS Lambda
 on:
   push:
     branches:
-      - main  # Trigger on push to the main branch
+      - main
+      - dev
 
 jobs:
   deploy:
@@ -43,11 +44,11 @@ jobs:
       - name: Create Lambda Layer
         run: |
           mkdir -p python/lib/python3.12/site-packages
-          pip install -r requirements.txt -t python/lib/python3.12/site-packages
+          pip install -r src/requirements.txt -t python/lib/python3.12/site-packages
           zip -r lambda-layer.zip python
           cd ..
         
-      - name: Deploy Lambda Layer
+      - name: Deploy Lambda Layer and attach to function
         run: |
           LAYER_VERSION=$(aws lambda publish-layer-version \
             --layer-name my-dependencies-layer \
@@ -64,3 +65,46 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: "us-east-1"
+
+      - name: Wait for function update to complete
+        run: |
+          aws lambda wait function-updated \
+            --function-name traffic_data_function
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "us-east-1"
+
+      - name: Publish Lambda version
+        id: publish
+        run: |
+          VERSION=$(aws lambda publish-version \
+            --function-name traffic_data_function \
+            --output text --query 'Version')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "us-east-1"
+
+      - name: Create or update Lambda alias
+        run: |
+          ALIAS_NAME=$([[ "${GITHUB_REF##*/}" == "main" ]] && echo "prod" || echo "dev")
+          echo "Setting alias to $ALIAS_NAME -> version $VERSION"
+
+          if aws lambda get-alias --function-name traffic_data_function --name $ALIAS_NAME > /dev/null 2>&1; then
+            aws lambda update-alias \
+              --function-name traffic_data_function \
+              --name $ALIAS_NAME \
+              --function-version $VERSION
+          else
+            aws lambda create-alias \
+              --function-name traffic_data_function \
+              --name $ALIAS_NAME \
+              --function-version $VERSION
+          fi
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "us-east-1"
+          VERSION: ${{ env.VERSION }}
