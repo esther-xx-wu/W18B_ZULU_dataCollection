@@ -12,7 +12,7 @@ parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(parent_dir)
 
 try:
-    from src.app import app
+    from app import app
     import src.collection
 except ImportError:
     pytest.skip(reason="could not import fetch_traffic_data", allow_module_level=True)
@@ -113,9 +113,7 @@ def test_transport_api_error(mock_get, client):
         response = client.get('/traffic/single/v1?suburb=Chatswood&numDays=2')
 
         assert response.status_code == 500
-        print('dkslcnsdkncdsc')
         data = json.loads(response.data)
-        print(data)
         assert "Failed to fetch data" in data["error"]
 
 @mock_aws
