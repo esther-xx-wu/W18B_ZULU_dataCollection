@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return jsonify(message="Hello from Flask on AWS Lambda!")
+    return jsonify(message="Collection Microservice is active!")
 
 @app.route('/traffic/single/v1', methods=['GET'])
 def handle_single_suburb_traffic():
