@@ -20,7 +20,7 @@ aws_access_key = os.getenv("ACCESS_KEY")
 aws_secret_key = os.getenv("SECRET_KEY")
 aws_region = os.getenv("REGION", "us-east-2")
 
-s3_client = boto3.resource(
+s3_client = boto3.client(
     "s3",
     aws_access_key_id=aws_access_key,
     aws_secret_access_key=aws_secret_key,
@@ -28,7 +28,7 @@ s3_client = boto3.resource(
 )
 
 # Helper Function to Call Transport NSW API and Get CSV Data
-def fetch_traffic_data(suburb, numDays):
+def fetch_traffic_data(suburb, numDays, queryType, format):
     if not suburb:
         return json.dumps({"error": "Suburb is required", "code": 400})
     elif not numDays:
@@ -37,17 +37,50 @@ def fetch_traffic_data(suburb, numDays):
         return json.dumps({"error": "Number of days must be a valid integer!", "code": 400})
     
     numDays = int(numDays)
-    
-    query = f"""
-    SELECT rt.date, SUM(rt.daily_total) AS total_daily_traffic
-    FROM road_traffic_counts_hourly_permanent rt
-    JOIN road_traffic_counts_station_reference rc 
-        ON rt.station_key = rc.station_key
-    WHERE rc.suburb = '{suburb}'
-    GROUP BY rt.date
-    ORDER BY rt.date DESC
-    LIMIT {numDays};
-    """
+    query = ""
+
+    if queryType == 'single':
+        query = f"""
+        SELECT rt.date, SUM(rt.daily_total) AS total_daily_traffic
+        FROM road_traffic_counts_hourly_permanent rt
+        JOIN road_traffic_counts_station_reference rc 
+            ON rt.station_key = rc.station_key
+        WHERE rc.suburb = '{suburb}'
+        GROUP BY rt.date
+        ORDER BY rt.date DESC
+        LIMIT {numDays};
+        """
+    else:
+        formatted_list = ', '.join(f"'{item}'" for item in suburb)
+        query = f"""
+        WITH ranked_traffic AS (
+            SELECT 
+                rc.suburb, 
+                rt.date, 
+                SUM(rt.daily_total) AS total_daily_traffic,
+                ROW_NUMBER() OVER (
+                    PARTITION BY rc.suburb 
+                    ORDER BY rt.date DESC
+                ) AS rn
+            FROM 
+                road_traffic_counts_hourly_permanent rt
+            JOIN 
+                road_traffic_counts_station_reference rc 
+                ON rt.station_key = rc.station_key
+            WHERE 
+                rc.suburb IN ({formatted_list})
+            GROUP BY 
+                rc.suburb, rt.date
+        )
+        SELECT 
+            suburb, date, total_daily_traffic
+        FROM 
+            ranked_traffic
+        WHERE 
+            rn <= {numDays}
+        ORDER BY 
+            suburb, date DESC;
+        """
 
     headers = {
         "Authorization": f"apikey {TRANSPORT_API_KEY}",
@@ -89,16 +122,30 @@ def fetch_traffic_data(suburb, numDays):
     writer.writeheader()
     writer.writerows(rows)
 
-    upload_to_s3(csv_file_out.getvalue(), suburb)
+    if format == 'csv':
+        return json.dumps({
+            "csv_file_download_link (valid for 5 mins only)": upload_to_s3(csv_file_out.getvalue(), suburb, format)
+        })
+
 
     return json.dumps(rows)
 
 # Helper Function to Upload CSV Data to S3 bucket
-def upload_to_s3(csv_data, suburb):
+def upload_to_s3(csv_data, suburb, format):
     file_name = f"{suburb}_traffic_data_{random.randint(10, 100)}.csv"
     try:
-        # s3_client.put_object(Bucket=S3_BUCKET_NAME, Key=file_name, Body=csv_data)
-        s3_client.Bucket(S3_BUCKET_NAME).put_object(Key=file_name, Body=csv_data)
-        return f"s3://{S3_BUCKET_NAME}/{file_name}"
+        # s3_client.Bucket(S3_BUCKET_NAME).put_object(Key=file_name, Body=csv_data)
+        s3_client.put_object(Bucket=S3_BUCKET_NAME, Key=file_name, Body=csv_data)
+        
+        # Generate pre-signed URL that expires in 5 mins
+        if format == 'csv':
+            url = s3_client.generate_presigned_url(
+                ClientMethod='get_object',
+                Params={'Bucket': S3_BUCKET_NAME, 'Key': file_name},
+                ExpiresIn=300
+            )
+            print(url)
+        return url
+
     except (NoCredentialsError, ClientError) as e:
         raise Exception(f"S3 Upload Failed: {str(e)}")
