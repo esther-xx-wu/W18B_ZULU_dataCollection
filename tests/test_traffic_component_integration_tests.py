@@ -4,7 +4,7 @@ import json
 import boto3
 import pytest
 import requests_mock
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from moto import mock_aws
 import importlib
 
