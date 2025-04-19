@@ -45,7 +45,7 @@ def fetch_traffic_data(suburb, numDays, queryType, format):
         FROM road_traffic_counts_hourly_permanent rt
         JOIN road_traffic_counts_station_reference rc 
             ON rt.station_key = rc.station_key
-        WHERE rc.suburb = '{suburb}'
+        WHERE rc.suburb ILIKE '{suburb}'
         GROUP BY rt.date
         ORDER BY rt.date DESC
         LIMIT {numDays};
@@ -152,11 +152,11 @@ def upload_to_s3(csv_data, suburb, format):
 
 
 # Helper Function to get the rank of the given suburb based on total traffic count
-def fetch_traffic_data(suburb):
+def fetch_traffic_rank_data(suburb):
     if not suburb:
         return json.dumps({"error": "Suburb is required", "code": 400})
     
-    query = """
+    query = f"""
     WITH traffic_totals AS (
         SELECT 
             rc.suburb,
@@ -179,7 +179,7 @@ def fetch_traffic_data(suburb):
         total_traffic,
         traffic_rank
     FROM ranked_suburbs
-    WHERE suburb = %s;
+    WHERE suburb ILIKE '{suburb}';
     """
 
     headers = {
@@ -198,6 +198,8 @@ def fetch_traffic_data(suburb):
         raise Exception(f"Failed to fetch data: {message}")
     
     result = json.loads(response.text)
+    if not result["rows"]:
+        return json.dumps({"error": f"There is no traffic data for {suburb}", "code": 400})
 
     return_obj = {
         "rank": result["rows"][0]["traffic_rank"],
