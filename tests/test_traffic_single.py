@@ -18,13 +18,13 @@ def mock_requests():
     with patch("collection.requests.get") as mock:
         yield mock
 
-@pytest.fixture
-def mock_upload():
-    """Fixture to mock upload_to_s3"""
-    with patch("collection.upload_to_s3") as mock:
-        yield mock
+# @pytest.fixture
+# def mock_upload():
+#     """Fixture to mock upload_to_s3"""
+#     with patch("collection.upload_to_s3") as mock:
+#         yield mock
 
-def test_fetch_traffic_data_success(mock_requests, mock_upload):
+def test_fetch_traffic_data_success(mock_requests):
     """Test successful data retrieval"""
     suburb = "Liverpool"
     numDays = "2"
@@ -36,7 +36,7 @@ def test_fetch_traffic_data_success(mock_requests, mock_upload):
     mock_response.text = mock_csv
     mock_requests.return_value = mock_response
 
-    result_json = fetch_traffic_data(suburb, numDays)
+    result_json = fetch_traffic_data(suburb, numDays, "single", "json")
     result = json.loads(result_json)
 
     assert isinstance(result, list)
@@ -47,32 +47,30 @@ def test_fetch_traffic_data_success(mock_requests, mock_upload):
     assert result[0]["date"] == "01-Apr-2025"
     assert result[0]["total_daily_traffic"] == 15000
 
-    mock_upload.assert_called_once()
-
 def test_fetch_traffic_data_missing_suburb():
     """Test missing suburb"""
-    result_json = fetch_traffic_data("", "5")
+    result_json = fetch_traffic_data("", "5", "single", "json")
     result = json.loads(result_json)
     assert result["error"] == "Suburb is required"
     assert result["code"] == 400
 
 def test_fetch_traffic_data_missing_numDays():
     """Test missing numDays"""
-    result_json = fetch_traffic_data("Liverpool", "")
+    result_json = fetch_traffic_data("Liverpool", "", "single", "json")
     result = json.loads(result_json)
     assert result["error"] == "Number of days is required"
     assert result["code"] == 400
 
 def test_fetch_traffic_data_invalid_numDays():
     """Test non-numeric numDays"""
-    result_json = fetch_traffic_data("Liverpool", "abc")
+    result_json = fetch_traffic_data("Liverpool", "abc", "single", "json")
     result = json.loads(result_json)
     assert result["error"] == "Number of days must be a valid integer!"
     assert result["code"] == 400
 
 def test_fetch_traffic_data_invalid_params_multiple():
     """Test multiple invalid params"""
-    result_json = fetch_traffic_data("", "abc")
+    result_json = fetch_traffic_data("", "abc", "single", "json")
     result = json.loads(result_json)
     assert result["error"] == "Suburb is required"
     assert result["code"] == 400
