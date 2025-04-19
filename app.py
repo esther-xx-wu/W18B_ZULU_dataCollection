@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request, make_response
 import awsgi
 import json
-from src.collection import fetch_traffic_data
+from src.collection import fetch_traffic_data, fetch_traffic_rank_data
 
 app = Flask(__name__)
 
@@ -70,6 +70,34 @@ def handle_multiple_suburb_traffic():
             return jsonify({"error": traffic_data_json["error"]}), traffic_data_json["code"]
 
         resp = make_response(traffic_data)
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        resp.headers['Content-Type'] = 'application/json'
+        return resp
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/traffic/rank/v1', methods=['POST'])
+def handle_suburb_traffic_rank():
+    """
+    Calculates and returns the rank of the given suburb in terms of total traffic count.
+
+    Args:
+        suburbs (str): Suburb for which data is requested.
+
+    Returns:
+        Response: JSON.
+    """
+    try:
+        suburb = request.args.get('suburb')
+
+        traffic_rank_data = fetch_traffic_rank_data(suburb)
+        traffic_rank_data_json = json.loads(traffic_rank_data)
+        if "error" in traffic_rank_data_json:
+            return jsonify({"error": traffic_rank_data_json["error"]}), traffic_rank_data_json["code"]
+
+        resp = make_response(traffic_rank_data)
         resp.headers['Access-Control-Allow-Origin'] = '*'
         resp.headers['Content-Type'] = 'application/json'
         return resp
