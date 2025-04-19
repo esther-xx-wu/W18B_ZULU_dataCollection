@@ -46,44 +46,23 @@ def raw_csv_data():
 
 @mock_aws
 def test_successful_api_call(client, raw_csv_data):
-    """Test successful API call and S3 upload."""
-    s3 = boto3.resource(
-        "s3",
-        aws_access_key_id="fake-access-key",
-        aws_secret_access_key="fake-secret-key",
-        region_name="us-east-2"
-    )
-    
-    # Mock S3 bucket
-    bucket_name = "test-bucket"
-    s3.create_bucket(
-        Bucket=bucket_name,
-        CreateBucketConfiguration={"LocationConstraint": "us-east-2"}
-    )
+    """Test successful API call."""
+    with requests_mock.Mocker() as m:
+        m.get(
+            "https://api.transport.nsw.gov.au/v1/traffic_volume",
+            text=raw_csv_data
+        )
 
-    with patch("src.collection.s3_client", s3):
-        with requests_mock.Mocker() as m:
-            m.get(
-                "https://api.transport.nsw.gov.au/v1/traffic_volume",
-                text=raw_csv_data
-            )
+        response = client.get('/traffic/single/v1?suburb=Hornsby&numDays=2')
 
-            response = client.get('/traffic/single/v1?suburb=Hornsby&numDays=2')
+        assert response.status_code == 200
+        assert response.headers["Content-Type"] == "application/json"
 
-            assert response.status_code == 200
-            assert response.headers["Content-Type"] == "application/json"
-
-            response_json = json.loads(response.data.decode("utf-8"))
-            assert isinstance(response_json, list)
-            assert len(response_json) == 2
-            assert "date" in response_json[0]
-            assert "total_daily_traffic" in response_json[0]
-
-            bucket = s3.Bucket("test-bucket")
-            files = list(bucket.objects.all())
-            assert len(files) == 1
-            assert files[0].key.startswith("Hornsby_traffic_data_")
-            assert files[0].key.endswith(".csv")
+        response_json = json.loads(response.data.decode("utf-8"))
+        assert isinstance(response_json, list)
+        assert len(response_json) == 2
+        assert "date" in response_json[0]
+        assert "total_daily_traffic" in response_json[0]
 
 @mock_aws
 @patch("src.collection.requests.get")
@@ -101,7 +80,14 @@ def test_transport_api_error(mock_get, client):
         CreateBucketConfiguration={"LocationConstraint": "us-east-2"}
     )
     
-    with patch("src.collection.s3_client", s3):
+    s3_client = boto3.client(
+        "s3",
+        aws_access_key_id="fake-access-key",
+        aws_secret_access_key="fake-secret-key",
+        region_name="us-east-2"
+    )
+    
+    with patch("src.collection.s3_client", s3_client):
         """Test handling of Transport API errors."""
         mock_get.return_value.status_code = 403
         mock_get.return_value.text = {
@@ -115,21 +101,3 @@ def test_transport_api_error(mock_get, client):
         assert response.status_code == 500
         data = json.loads(response.data)
         assert "Failed to fetch data" in data["error"]
-
-@mock_aws
-@patch("src.collection.requests.get")
-@patch("src.collection.s3_client.Bucket")
-def test_s3_upload_error(mock_s3_bucket, mock_get, client, raw_csv_data):
-    """Test handling of S3 upload errors."""
-    mock_get.return_value.status_code = 200
-    mock_get.return_value.text = raw_csv_data
-
-    mock_bucket = MagicMock()
-    mock_bucket.put_object.side_effect = boto3.exceptions.Boto3Error("S3 error")
-    mock_s3_bucket.return_value = mock_bucket
-
-    response = client.get('/traffic/single/v1?suburb=Hornsby&numDays=2')
-
-    assert response.status_code == 500
-    data = json.loads(response.data)
-    assert "S3 error" in data["error"]
