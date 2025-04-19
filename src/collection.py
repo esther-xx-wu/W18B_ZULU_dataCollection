@@ -149,3 +149,59 @@ def upload_to_s3(csv_data, suburb, format):
 
     except (NoCredentialsError, ClientError) as e:
         raise Exception(f"S3 Upload Failed: {str(e)}")
+
+
+# Helper Function to get the rank of the given suburb based on total traffic count
+def fetch_traffic_data(suburb):
+    if not suburb:
+        return json.dumps({"error": "Suburb is required", "code": 400})
+    
+    query = """
+    WITH traffic_totals AS (
+        SELECT 
+            rc.suburb,
+            SUM(rt.daily_total) AS total_traffic
+        FROM road_traffic_counts_hourly_permanent rt
+        JOIN road_traffic_counts_station_reference rc 
+            ON rt.station_key = rc.station_key
+        WHERE rt.date >= CURRENT_DATE - INTERVAL '5 years'
+        GROUP BY rc.suburb
+    ),
+    ranked_suburbs AS (
+        SELECT 
+            suburb,
+            total_traffic,
+            RANK() OVER (ORDER BY total_traffic DESC) AS traffic_rank
+        FROM traffic_totals
+    )
+    SELECT 
+        suburb,
+        total_traffic,
+        traffic_rank
+    FROM ranked_suburbs
+    WHERE suburb = %s;
+    """
+
+    headers = {
+        "Authorization": f"apikey {TRANSPORT_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    response = requests.get(
+        TRAFFIC_API_ENDPOINT,
+        params={"format": "json", "q": query},
+        headers=headers
+    )
+    
+    if response.status_code != 200:
+        message = response.text.get("ErrorDetails", {}).get("Message", "No message found")
+        raise Exception(f"Failed to fetch data: {message}")
+    
+    result = json.loads(response.text)
+
+    return_obj = {
+        "rank": result["rows"][0]["traffic_rank"],
+        "traffic_count": result["rows"][0]["total_traffic"]
+    }
+    
+    return json.dumps(return_obj)
