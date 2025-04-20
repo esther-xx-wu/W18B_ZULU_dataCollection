@@ -134,7 +134,7 @@ def handle_suburb_traffic_rank():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/upload-graph', methods=['POST'])
+@app.route('/upload-graph/v1', methods=['POST'])
 @token_required
 def upload_graph():
     data = request.json
@@ -162,7 +162,7 @@ def upload_graph():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/download-graphs', methods=['GET'])
+@app.route('/download-graphs/v1', methods=['GET'])
 @token_required
 def download_graphs():
     username = request.args.get('username')
