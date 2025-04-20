@@ -16,7 +16,6 @@ iniconfig==2.1.0
 itsdangerous==2.2.0
 Jinja2==3.1.6
 jmespath==1.0.1
-jwt==1.3.1
 MarkupSafe==3.0.2
 packaging==24.2
 pluggy==1.5.0
