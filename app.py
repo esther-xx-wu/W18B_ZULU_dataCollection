@@ -1,9 +1,36 @@
 from flask import Flask, jsonify, request, make_response
 import awsgi
 import json
-from src.collection import fetch_traffic_data, fetch_traffic_rank_data
+from src.auth import validate_token
+from src.collection import fetch_traffic_data, fetch_traffic_rank_data, upload_user_file_to_s3, download_user_file_from_s3
+from functools import wraps
 
 app = Flask(__name__)
+
+# Decorator for protected routes
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        
+        # Get token from header
+        if 'Authorization' in request.headers:
+            auth_header = request.headers['Authorization']
+            if auth_header.startswith('Bearer '):
+                token = auth_header[7:]
+            else:
+                token = auth_header
+        
+        if not token:
+            return jsonify({'message': 'access_token is missing'}), 401
+        
+        valid, message = validate_token(token)
+        if not valid:
+            return jsonify({'message': f'Invalid access_token: {message}'}), 401
+            
+        return f(*args, **kwargs)
+    return decorated
+
 
 @app.route("/")
 def home():
@@ -37,7 +64,7 @@ def handle_single_suburb_traffic():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
-@app.route('/traffic/multiple/v1', methods=['POST'])
+@app.route('/traffic/multiple/v1', methods=['GET'])
 def handle_multiple_suburb_traffic():
     """
     Collects and retrieves traffic data for given suburbs for the number of days provided.
@@ -78,6 +105,7 @@ def handle_multiple_suburb_traffic():
         return jsonify({"error": str(e)}), 500
 
 
+
 @app.route('/traffic/rank/v1', methods=['POST'])
 def handle_suburb_traffic_rank():
     """
@@ -104,6 +132,57 @@ def handle_suburb_traffic_rank():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route('/upload-graph', methods=['POST'])
+@token_required
+def upload_graph():
+    data = request.json
+    base64_image = data.get('image-base64')
+    suburbs = data.get('suburbs')
+    print(suburbs)
+    username = data.get('username')
+
+    if not all([base64_image, username, suburbs]):
+        return jsonify({'error': 'Missing fields'}), 400
+
+    filename = f"{username}-{suburbs}.png"
+
+    try:
+        return_data = upload_user_file_to_s3(base64_image, filename)
+        return_data_json = json.loads(return_data)
+        if "error" in return_data_json:
+            return jsonify({"error": return_data_json["error"]}), return_data_json["code"]
+
+        resp = make_response(return_data)
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        resp.headers['Content-Type'] = 'application/json'
+        return resp
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/download-graphs', methods=['GET'])
+@token_required
+def download_graphs():
+    username = request.args.get('username')
+
+    if not username:
+        return jsonify({'error': 'Missing username'}), 400
+
+    try:
+        return_data = download_user_file_from_s3(username)
+        return_data_json = json.loads(return_data)
+        if "error" in return_data_json:
+            return jsonify({"error": return_data_json["error"]}), return_data_json["code"]
+
+        resp = make_response(return_data)
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        resp.headers['Content-Type'] = 'application/json'
+        return resp
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 def lambda_handler(event, context):
     if 'httpMethod' not in event:
