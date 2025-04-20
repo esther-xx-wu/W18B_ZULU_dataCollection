@@ -1,3 +1,4 @@
+import base64
 import requests
 import boto3
 import os
@@ -20,7 +21,7 @@ aws_access_key = os.getenv("ACCESS_KEY")
 aws_secret_key = os.getenv("SECRET_KEY")
 aws_region = os.getenv("REGION", "us-east-2")
 
-s3_client = boto3.resource(
+s3_client = boto3.client(
     "s3",
     aws_access_key_id=aws_access_key,
     aws_secret_access_key=aws_secret_key,
@@ -28,7 +29,7 @@ s3_client = boto3.resource(
 )
 
 # Helper Function to Call Transport NSW API and Get CSV Data
-def fetch_traffic_data(suburb, numDays):
+def fetch_traffic_data(suburb, numDays, queryType, format):
     if not suburb:
         return json.dumps({"error": "Suburb is required", "code": 400})
     elif not numDays:
@@ -37,17 +38,50 @@ def fetch_traffic_data(suburb, numDays):
         return json.dumps({"error": "Number of days must be a valid integer!", "code": 400})
     
     numDays = int(numDays)
-    
-    query = f"""
-    SELECT rt.date, SUM(rt.daily_total) AS total_daily_traffic
-    FROM road_traffic_counts_hourly_permanent rt
-    JOIN road_traffic_counts_station_reference rc 
-        ON rt.station_key = rc.station_key
-    WHERE rc.suburb = '{suburb}'
-    GROUP BY rt.date
-    ORDER BY rt.date DESC
-    LIMIT {numDays};
-    """
+    query = ""
+
+    if queryType == 'single':
+        query = f"""
+        SELECT rt.date, SUM(rt.daily_total) AS total_daily_traffic
+        FROM road_traffic_counts_hourly_permanent rt
+        JOIN road_traffic_counts_station_reference rc 
+            ON rt.station_key = rc.station_key
+        WHERE rc.suburb ILIKE '{suburb}'
+        GROUP BY rt.date
+        ORDER BY rt.date DESC
+        LIMIT {numDays};
+        """
+    else:
+        formatted_list = ', '.join(f"'{item}'" for item in suburb)
+        query = f"""
+        WITH ranked_traffic AS (
+            SELECT 
+                rc.suburb, 
+                rt.date, 
+                SUM(rt.daily_total) AS total_daily_traffic,
+                ROW_NUMBER() OVER (
+                    PARTITION BY rc.suburb 
+                    ORDER BY rt.date DESC
+                ) AS rn
+            FROM 
+                road_traffic_counts_hourly_permanent rt
+            JOIN 
+                road_traffic_counts_station_reference rc 
+                ON rt.station_key = rc.station_key
+            WHERE 
+                rc.suburb IN ({formatted_list})
+            GROUP BY 
+                rc.suburb, rt.date
+        )
+        SELECT 
+            suburb, date, total_daily_traffic
+        FROM 
+            ranked_traffic
+        WHERE 
+            rn <= {numDays}
+        ORDER BY 
+            suburb, date DESC;
+        """
 
     headers = {
         "Authorization": f"apikey {TRANSPORT_API_KEY}",
@@ -89,16 +123,123 @@ def fetch_traffic_data(suburb, numDays):
     writer.writeheader()
     writer.writerows(rows)
 
-    upload_to_s3(csv_file_out.getvalue(), suburb)
+    if format == 'csv':
+        return json.dumps({
+            "csv_file_download_link (valid for 5 mins only)": upload_to_s3(csv_file_out.getvalue(), suburb, format)
+        })
+
 
     return json.dumps(rows)
 
 # Helper Function to Upload CSV Data to S3 bucket
-def upload_to_s3(csv_data, suburb):
+def upload_to_s3(csv_data, suburb, format):
     file_name = f"{suburb}_traffic_data_{random.randint(10, 100)}.csv"
     try:
-        # s3_client.put_object(Bucket=S3_BUCKET_NAME, Key=file_name, Body=csv_data)
-        s3_client.Bucket(S3_BUCKET_NAME).put_object(Key=file_name, Body=csv_data)
-        return f"s3://{S3_BUCKET_NAME}/{file_name}"
+        # s3_client.Bucket(S3_BUCKET_NAME).put_object(Key=file_name, Body=csv_data)
+        s3_client.put_object(Bucket=S3_BUCKET_NAME, Key=file_name, Body=csv_data)
+        
+        # Generate pre-signed URL that expires in 5 mins
+        if format == 'csv':
+            url = s3_client.generate_presigned_url(
+                ClientMethod='get_object',
+                Params={'Bucket': S3_BUCKET_NAME, 'Key': file_name},
+                ExpiresIn=300
+            )
+            print(url)
+        return url
+
     except (NoCredentialsError, ClientError) as e:
         raise Exception(f"S3 Upload Failed: {str(e)}")
+    
+
+def upload_user_file_to_s3(base64_image, filename):
+    try:
+        image_bytes = base64.b64decode(base64_image)
+        s3_client.put_object(
+            Bucket=S3_BUCKET_NAME,
+            Key=filename,
+            Body=image_bytes,
+            ContentType='image/png'
+        )
+        return json.dumps({'message': 'Image uploaded', 'filename': filename})
+    except Exception as e:
+        raise Exception(f"Failed to upload image: {e}")
+
+
+def download_user_file_from_s3(username):
+    try:
+        response = s3_client.list_objects_v2(Bucket=S3_BUCKET_NAME, Prefix=f"{username}-")
+        items = response.get('Contents', [])
+
+        images = []
+        for item in items:
+            key = item['Key']
+            s3_response = s3_client.get_object(Bucket=S3_BUCKET_NAME, Key=key)
+            image_data = s3_response['Body'].read()
+            base64_encoded = base64.b64encode(image_data).decode('utf-8')
+            images.append({
+                'filename': key,
+                'base64_image': base64_encoded
+            })
+
+        return json.dumps({'images': images})
+    except Exception as e:
+        raise Exception(f"Failed to download image: {e}")
+
+
+# Helper Function to get the rank of the given suburb based on total traffic count
+def fetch_traffic_rank_data(suburb):
+    if not suburb:
+        return json.dumps({"error": "Suburb is required", "code": 400})
+    
+    query = f"""
+    WITH traffic_totals AS (
+        SELECT 
+            rc.suburb,
+            SUM(rt.daily_total) AS total_traffic
+        FROM road_traffic_counts_hourly_permanent rt
+        JOIN road_traffic_counts_station_reference rc 
+            ON rt.station_key = rc.station_key
+        WHERE rt.date >= CURRENT_DATE - INTERVAL '5 years'
+        GROUP BY rc.suburb
+    ),
+    ranked_suburbs AS (
+        SELECT 
+            suburb,
+            total_traffic,
+            RANK() OVER (ORDER BY total_traffic DESC) AS traffic_rank
+        FROM traffic_totals
+    )
+    SELECT 
+        suburb,
+        total_traffic,
+        traffic_rank
+    FROM ranked_suburbs
+    WHERE suburb ILIKE '{suburb}';
+    """
+
+    headers = {
+        "Authorization": f"apikey {TRANSPORT_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    response = requests.get(
+        TRAFFIC_API_ENDPOINT,
+        params={"format": "json", "q": query},
+        headers=headers
+    )
+    
+    if response.status_code != 200:
+        message = response.text.get("ErrorDetails", {}).get("Message", "No message found")
+        raise Exception(f"Failed to fetch data: {message}")
+    
+    result = json.loads(response.text)
+    if not result["rows"]:
+        return json.dumps({"error": f"There is no traffic data for {suburb}", "code": 400})
+
+    return_obj = {
+        "rank": result["rows"][0]["traffic_rank"],
+        "traffic_count": result["rows"][0]["total_traffic"]
+    }
+    
+    return json.dumps(return_obj)
