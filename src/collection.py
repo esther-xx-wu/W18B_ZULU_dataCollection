@@ -1,3 +1,4 @@
+import base64
 import requests
 import boto3
 import os
@@ -149,6 +150,41 @@ def upload_to_s3(csv_data, suburb, format):
 
     except (NoCredentialsError, ClientError) as e:
         raise Exception(f"S3 Upload Failed: {str(e)}")
+    
+
+def upload_user_file_to_s3(base64_image, filename):
+    try:
+        image_bytes = base64.b64decode(base64_image)
+        s3_client.put_object(
+            Bucket=S3_BUCKET_NAME,
+            Key=filename,
+            Body=image_bytes,
+            ContentType='image/png'
+        )
+        return json.dumps({'message': 'Image uploaded', 'filename': filename})
+    except Exception as e:
+        raise Exception(f"Failed to upload image: {e}")
+
+
+def download_user_file_from_s3(username):
+    try:
+        response = s3_client.list_objects_v2(Bucket=S3_BUCKET_NAME, Prefix=f"{username}-")
+        items = response.get('Contents', [])
+
+        images = []
+        for item in items:
+            key = item['Key']
+            s3_response = s3_client.get_object(Bucket=S3_BUCKET_NAME, Key=key)
+            image_data = s3_response['Body'].read()
+            base64_encoded = base64.b64encode(image_data).decode('utf-8')
+            images.append({
+                'filename': key,
+                'base64_image': base64_encoded
+            })
+
+        return json.dumps({'images': images})
+    except Exception as e:
+        raise Exception(f"Failed to download image: {e}")
 
 
 # Helper Function to get the rank of the given suburb based on total traffic count
