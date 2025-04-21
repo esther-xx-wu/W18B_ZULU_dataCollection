@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request, make_response
 import awsgi
 import json
 from src.auth import validate_token
-from src.collection import fetch_traffic_data, fetch_traffic_rank_data, upload_user_file_to_s3, download_user_file_from_s3
+from src.collection import fetch_traffic_data, fetch_traffic_rank_data, upload_user_file_to_s3, download_user_file_from_s3, fetch_yearly_avg_traffic
 from functools import wraps
 
 app = Flask(__name__)
@@ -104,6 +104,44 @@ def handle_multiple_suburb_traffic():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/traffic/yearly-avg/v1', methods=['GET'])
+def handle_suburb_traffic_avg():
+    """
+    Collects and retrieves yearly traffic data for the given suburb(s) in the specified year range.
+
+    Query Params:
+        suburb: Comma-separated list of suburbs
+        startYear: Start year (inclusive)
+        endYear: End year (inclusive)
+
+    Returns:
+        JSON data with year-wise traffic counts for each suburb
+    """
+    try:
+        suburbs_raw = request.args.get('suburbs')
+        startYear = int(request.args.get('startYear'))
+        endYear = int(request.args.get('endYear'))
+
+        if not suburbs_raw:
+            return jsonify({"error": "Suburb is required"}), 400
+
+        if startYear > endYear:
+            return jsonify({"error": "startYear cannot be after endYear!"}), 400
+
+        suburbs = [s.strip() for s in suburbs_raw.split(',')]
+        traffic_data = fetch_yearly_avg_traffic(suburbs, startYear, endYear)
+        traffic_data_json = json.loads(traffic_data)
+
+        if "error" in traffic_data_json:
+            return jsonify({"error": traffic_data_json["error"]}), traffic_data_json["code"]
+
+        resp = make_response(traffic_data)
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        resp.headers['Content-Type'] = 'application/json'
+        return resp
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/traffic/rank/v1', methods=['POST'])

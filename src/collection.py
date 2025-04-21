@@ -243,3 +243,69 @@ def fetch_traffic_rank_data(suburb):
     }
     
     return json.dumps(return_obj)
+
+
+def fetch_yearly_avg_traffic(suburbs, start_year, end_year):
+    try:
+        formatted_suburbs = ', '.join(f"'{s}'" for s in suburbs)
+
+        query = f"""
+        SELECT 
+            rc.suburb,
+            rt.year, 
+            SUM(rt.traffic_count) AS traffic_count
+        FROM road_traffic_counts_yearly_summary rt
+        JOIN road_traffic_counts_station_reference rc 
+            ON rt.station_key = rc.station_key
+        WHERE rc.suburb IN ({formatted_suburbs})
+          AND rt.year BETWEEN {start_year} AND {end_year}
+        GROUP BY rc.suburb, rt.year
+        ORDER BY rc.suburb, rt.year;
+        """
+
+        headers = {
+            "Authorization": f"apikey {TRANSPORT_API_KEY}",
+            "Content-Type": "application/json"
+        }
+
+        response = requests.get(
+            TRAFFIC_API_ENDPOINT,
+            params={"format": "json", "q": query},
+            headers=headers
+        )
+
+        if response.status_code != 200:
+            message = response.text.get("ErrorDetails", {}).get("Message", "No message found")
+            raise Exception(f"Failed to fetch data: {message}")
+
+        result = json.loads(response.text)
+        rows = result.get("rows", [])
+
+        # Build { suburb: {year: traffic_count} }
+        data_by_suburb = {}
+        for row in rows:
+            suburb = row["suburb"]
+            year = row["year"]
+            traffic = row["traffic_count"]
+            data_by_suburb.setdefault(suburb, {})[year] = traffic
+
+        # Create the final structured output
+        suburbs_output = []
+        for suburb in suburbs:
+            yearly_data = data_by_suburb.get(suburb, {})
+            years_range = list(range(start_year, end_year + 1))
+            traffic_counts = [yearly_data.get(year, 0) for year in years_range]
+
+            suburbs_output.append({
+                "suburb": suburb,
+                "avg_traffic": traffic_counts,
+                "years": years_range
+            })
+
+        return json.dumps({ "suburbsAvgTraffic": suburbs_output })
+
+    except Exception as e:
+        return json.dumps({"error": str(e), "code": 500})
+
+
+
