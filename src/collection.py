@@ -169,7 +169,12 @@ def upload_user_file_to_s3(base64_image, filename):
 def download_user_file_from_s3(username):
     try:
         response = s3_client.list_objects_v2(Bucket=S3_BUCKET_NAME, Prefix=f"{username}-")
+        print(response)
         items = response.get('Contents', [])
+        print(items)
+        
+        # response = s3_client.list_objects_v2(Bucket=S3_BUCKET_NAME)
+        # items = response.get('Contents', [])
 
         images = []
         for item in items:
@@ -306,6 +311,3 @@ def fetch_yearly_avg_traffic(suburbs, start_year, end_year):
 
     except Exception as e:
         return json.dumps({"error": str(e), "code": 500})
-
-
-
