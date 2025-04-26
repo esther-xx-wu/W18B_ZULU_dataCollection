@@ -1,4 +1,5 @@
 import base64
+import botocore
 import requests
 import boto3
 import os
@@ -308,4 +309,38 @@ def fetch_yearly_avg_traffic(suburbs, start_year, end_year):
         return json.dumps({"error": str(e), "code": 500})
 
 
+def delete_user_file_from_s3(token, provided_username, title):
+    try:
+        cognito_client = boto3.client('cognito-idp', region_name=aws_region)
+        user_response = cognito_client.get_user(AccessToken=token)
 
+        token_username = None
+        for attr in user_response['UserAttributes']:
+            if attr['Name'] == 'sub':
+                token_username = attr['Value']
+                break
+
+        if not token_username:
+            return json.dumps({'error': 'Username (name) not found in token', 'code': 401})
+
+        if token_username != provided_username:
+            return json.dumps({'error': 'You are not authorized to delete this file', 'code': 403})
+
+        filename = f"{provided_username}-['{title}'].png"
+
+        # Check if file exists
+        try:
+            s3_client.head_object(Bucket=S3_BUCKET_NAME, Key=filename)
+        except botocore.exceptions.ClientError as e:
+            if e.response['Error']['Code'] == "404":
+                return json.dumps({'error': 'File does not exist', 'code': 404})
+            else:
+                return json.dumps({'error': 'Error accessing S3', 'code': 500})
+
+        s3_client.delete_object(Bucket=S3_BUCKET_NAME, Key=filename)
+        return json.dumps({'message': 'File deleted successfully'})
+
+    except cognito_client.exceptions.NotAuthorizedException:
+        return json.dumps({'error': 'Invalid or expired token', 'code': 401})
+    except Exception as e:
+        return json.dumps({'error': str(e), 'code': 500})
