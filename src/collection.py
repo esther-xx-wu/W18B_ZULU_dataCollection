@@ -326,7 +326,7 @@ def delete_user_file_from_s3(token, provided_username, title):
         if token_username != provided_username:
             return json.dumps({'error': 'You are not authorized to delete this file', 'code': 403})
 
-        filename = f"{provided_username}-['{title}'].png"
+        filename = title
 
         # Check if file exists
         try:
