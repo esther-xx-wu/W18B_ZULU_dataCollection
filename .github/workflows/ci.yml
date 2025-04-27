@@ -110,6 +110,27 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: latest
 
-      - name: Set up staging job (WIP)
-        run: echo "Running staging job (will run Postman API tests when done.)"
+      - name: Install Newman dependency
+        run: npm install newman
+
+      - name: Create directory to store test reports
+        run: mkdir reports
+
+      - name: Run Postman tests with Newman
+        run: |
+          newman run postman/ZULU_retrieval.postman_collection.json -r cli,junit \
+            --reporter-junit-export reports
+      
+      - name: Upload Postman report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: postman-report-artifact
+          path: reports
+          if-no-files-found: error
+
