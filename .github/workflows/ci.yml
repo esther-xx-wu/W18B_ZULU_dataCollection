@@ -124,7 +124,7 @@ jobs:
 
       - name: Run Postman tests with Newman
         run: |
-          newman run postman/ZULU_retrieval.postman_collection.json -r cli,junit \
+          newman run postman/ZULU_dataCollection.postman_collection.json -r cli,junit \
             --reporter-junit-export reports
       
       - name: Upload Postman report artifact
