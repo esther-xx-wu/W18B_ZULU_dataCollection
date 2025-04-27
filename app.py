@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request, make_response
 import awsgi
 import json
 from src.auth import validate_token
-from src.collection import fetch_traffic_data, fetch_traffic_rank_data, upload_user_file_to_s3, download_user_file_from_s3, fetch_yearly_avg_traffic
+from src.collection import delete_user_file_from_s3, fetch_traffic_data, fetch_traffic_rank_data, upload_user_file_to_s3, download_user_file_from_s3, fetch_yearly_avg_traffic
 from functools import wraps
 
 app = Flask(__name__)
@@ -220,6 +220,36 @@ def download_graphs():
         return resp
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/delete-graph/v1', methods=['DELETE'])
+@token_required
+def delete_graph():
+    auth_header = request.headers.get('Authorization')
+
+    token = auth_header.split(" ")[1] if " " in auth_header else auth_header
+
+    try:
+        username = request.args.get('username')
+        title = request.args.get('fileName')
+
+        if not username or not title:
+            return jsonify({'error': 'Missing username or title'}), 400
+
+        return_data = delete_user_file_from_s3(token, username, title)
+
+        return_data_json = json.loads(return_data)
+        if "error" in return_data_json:
+            return jsonify({"error": return_data_json["error"]}), return_data_json["code"]
+
+        resp = make_response(return_data)
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        resp.headers['Content-Type'] = 'application/json'
+        return resp
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 
 def lambda_handler(event, context):
