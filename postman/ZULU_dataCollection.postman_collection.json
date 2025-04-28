@@ -1,0 +1,1130 @@
+{
+	"info": {
+		"_postman_id": "dff3693a-5a82-4b94-9587-6494a2b5745b",
+		"name": "ZULU_dataCollection",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "44467677"
+	},
+	"item": [
+		{
+			"name": "traffic/single/v1",
+			"item": [
+				{
+					"name": "200: OK",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://ga1wu9p0i0.execute-api.us-east-1.amazonaws.com/dev/traffic/single/v1?suburb=Lockhart&numDays=2",
+							"protocol": "https",
+							"host": [
+								"ga1wu9p0i0",
+								"execute-api",
+								"us-east-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"dev",
+								"traffic",
+								"single",
+								"v1"
+							],
+							"query": [
+								{
+									"key": "suburb",
+									"value": "Lockhart"
+								},
+								{
+									"key": "numDays",
+									"value": "2"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "400: Suburb is required",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Expect 400 Suburb is required\", function () {\r",
+									"    pm.response.to.have.status(400);\r",
+									"    var res = JSON.parse(pm.response.text())\r",
+									"    pm.expect(res.error).to.eql(\"Suburb is required\");\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var random=Math.floor(Math.random()*10);\r",
+									"pm.variables.set('numDays',random)"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://ga1wu9p0i0.execute-api.us-east-1.amazonaws.com/dev/traffic/single/v1?suburb=&numDays=2",
+							"protocol": "https",
+							"host": [
+								"ga1wu9p0i0",
+								"execute-api",
+								"us-east-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"dev",
+								"traffic",
+								"single",
+								"v1"
+							],
+							"query": [
+								{
+									"key": "suburb",
+									"value": ""
+								},
+								{
+									"key": "numDays",
+									"value": "2"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "400: Number of days is required",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Expect 400 Suburb is required\", function () {\r",
+									"    pm.response.to.have.status(400);\r",
+									"    var res = JSON.parse(pm.response.text())\r",
+									"    pm.expect(res.error).to.eql(\"Number of days is required\");\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var random=Math.floor(Math.random()*10);\r",
+									"pm.variables.set('numDays',random)"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://ga1wu9p0i0.execute-api.us-east-1.amazonaws.com/dev/traffic/single/v1?suburb=Liverpool&numDays=",
+							"protocol": "https",
+							"host": [
+								"ga1wu9p0i0",
+								"execute-api",
+								"us-east-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"dev",
+								"traffic",
+								"single",
+								"v1"
+							],
+							"query": [
+								{
+									"key": "suburb",
+									"value": "Liverpool"
+								},
+								{
+									"key": "numDays",
+									"value": ""
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "400: Invalid numDays",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Expect 400 Suburb is required\", function () {\r",
+									"    pm.response.to.have.status(400);\r",
+									"    var res = JSON.parse(pm.response.text())\r",
+									"    pm.expect(res.error).to.eql(\"Number of days must be a valid integer!\");\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var random=Math.floor(Math.random()*10);\r",
+									"pm.variables.set('numDays',random)"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://ga1wu9p0i0.execute-api.us-east-1.amazonaws.com/dev/traffic/single/v1?suburb=Liverpool&numDays=400.1",
+							"protocol": "https",
+							"host": [
+								"ga1wu9p0i0",
+								"execute-api",
+								"us-east-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"dev",
+								"traffic",
+								"single",
+								"v1"
+							],
+							"query": [
+								{
+									"key": "suburb",
+									"value": "Liverpool"
+								},
+								{
+									"key": "numDays",
+									"value": "400.1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "400: Multiple invalid values",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Expect 400 Suburb is required\", function () {\r",
+									"    pm.response.to.have.status(400);\r",
+									"    var res = JSON.parse(pm.response.text())\r",
+									"    pm.expect(res.error).to.eql(\"Suburb is required\");\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var random=Math.floor(Math.random()*10);\r",
+									"pm.variables.set('numDays',random)"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://ga1wu9p0i0.execute-api.us-east-1.amazonaws.com/dev/traffic/single/v1?suburb=&numDays=1",
+							"protocol": "https",
+							"host": [
+								"ga1wu9p0i0",
+								"execute-api",
+								"us-east-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"dev",
+								"traffic",
+								"single",
+								"v1"
+							],
+							"query": [
+								{
+									"key": "suburb",
+									"value": ""
+								},
+								{
+									"key": "numDays",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "traffic/multiple/v1",
+			"item": [
+				{
+					"name": "200: OK (json)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"suburbs\": [\"Liverpool\", \"Mosman\", \"Hornsby\"]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://ga1wu9p0i0.execute-api.us-east-1.amazonaws.com/dev/traffic/multiple/v1?numDays=5&format=json",
+							"protocol": "https",
+							"host": [
+								"ga1wu9p0i0",
+								"execute-api",
+								"us-east-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"dev",
+								"traffic",
+								"multiple",
+								"v1"
+							],
+							"query": [
+								{
+									"key": "numDays",
+									"value": "5"
+								},
+								{
+									"key": "format",
+									"value": "json"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "200: OK (csv)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"suburbs\": [\"Liverpool\", \"Mosman\", \"Hornsby\"]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://ga1wu9p0i0.execute-api.us-east-1.amazonaws.com/dev/traffic/multiple/v1?numDays=5&format=csv",
+							"protocol": "https",
+							"host": [
+								"ga1wu9p0i0",
+								"execute-api",
+								"us-east-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"dev",
+								"traffic",
+								"multiple",
+								"v1"
+							],
+							"query": [
+								{
+									"key": "numDays",
+									"value": "5"
+								},
+								{
+									"key": "format",
+									"value": "csv"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "400: Invalid or unsupported format",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(400);\r",
+									"    var res = JSON.parse(pm.response.text())\r",
+									"    pm.expect(res.error).to.eql(\"Invalid or unsupported format provided\");\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"suburbs\": [\"Liverpool\", \"Mosman\", \"Hornsby\"]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://ga1wu9p0i0.execute-api.us-east-1.amazonaws.com/dev/traffic/multiple/v1?numDays=5&format=xml",
+							"protocol": "https",
+							"host": [
+								"ga1wu9p0i0",
+								"execute-api",
+								"us-east-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"dev",
+								"traffic",
+								"multiple",
+								"v1"
+							],
+							"query": [
+								{
+									"key": "numDays",
+									"value": "5"
+								},
+								{
+									"key": "format",
+									"value": "xml"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "400: suburbs not a list",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(400);\r",
+									"    var res = JSON.parse(pm.response.text())\r",
+									"    pm.expect(res.error).to.eql(\"Expected a list of suburbs\");\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"suburbs\": \"Liverpool,Mosman,Murray River\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://ga1wu9p0i0.execute-api.us-east-1.amazonaws.com/dev/traffic/multiple/v1?numDays=5&format=json",
+							"protocol": "https",
+							"host": [
+								"ga1wu9p0i0",
+								"execute-api",
+								"us-east-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"dev",
+								"traffic",
+								"multiple",
+								"v1"
+							],
+							"query": [
+								{
+									"key": "numDays",
+									"value": "5"
+								},
+								{
+									"key": "format",
+									"value": "json"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "400: No suburb provided",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(400);\r",
+									"    var res = JSON.parse(pm.response.text())\r",
+									"    pm.expect(res.error).to.eql(\"Suburb is required\");\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"suburbs\": []}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://ga1wu9p0i0.execute-api.us-east-1.amazonaws.com/dev/traffic/multiple/v1?numDays=5&format=json",
+							"protocol": "https",
+							"host": [
+								"ga1wu9p0i0",
+								"execute-api",
+								"us-east-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"dev",
+								"traffic",
+								"multiple",
+								"v1"
+							],
+							"query": [
+								{
+									"key": "numDays",
+									"value": "5"
+								},
+								{
+									"key": "format",
+									"value": "json"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "400: Number of days is required",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(400);\r",
+									"    var res = JSON.parse(pm.response.text())\r",
+									"    pm.expect(res.error).to.eql(\"Number of days is required\");\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"suburbs\": [\"Liverpool\"]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://ga1wu9p0i0.execute-api.us-east-1.amazonaws.com/dev/traffic/multiple/v1?numDays=&format=json",
+							"protocol": "https",
+							"host": [
+								"ga1wu9p0i0",
+								"execute-api",
+								"us-east-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"dev",
+								"traffic",
+								"multiple",
+								"v1"
+							],
+							"query": [
+								{
+									"key": "numDays",
+									"value": ""
+								},
+								{
+									"key": "format",
+									"value": "json"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "400: Number of days is required Copy",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(400);\r",
+									"    var res = JSON.parse(pm.response.text())\r",
+									"    pm.expect(res.error).to.eql(\"Number of days must be a valid integer!\");\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"suburbs\": [\"Liverpool\"]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://ga1wu9p0i0.execute-api.us-east-1.amazonaws.com/dev/traffic/multiple/v1?numDays=abc&format=json",
+							"protocol": "https",
+							"host": [
+								"ga1wu9p0i0",
+								"execute-api",
+								"us-east-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"dev",
+								"traffic",
+								"multiple",
+								"v1"
+							],
+							"query": [
+								{
+									"key": "numDays",
+									"value": "abc"
+								},
+								{
+									"key": "format",
+									"value": "json"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "400: More than 10 suburbs provided",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(400);\r",
+									"    var res = JSON.parse(pm.response.text())\r",
+									"    pm.expect(res.error).to.eql(\"More than 10 suburbs provided\");\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"suburbs\": [\"Liverpool\",\"Mosman\",\"Murray River\",\"Junee\",\"Kempsey\", \"Hornsby\", \"Parramatta\", \"Narrabri\", \"Murrumbidgee\", \"Nambucca Valley\", \"Northern Beaches\"]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://ga1wu9p0i0.execute-api.us-east-1.amazonaws.com/dev/traffic/multiple/v1?numDays=5&format=json",
+							"protocol": "https",
+							"host": [
+								"ga1wu9p0i0",
+								"execute-api",
+								"us-east-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"dev",
+								"traffic",
+								"multiple",
+								"v1"
+							],
+							"query": [
+								{
+									"key": "numDays",
+									"value": "5"
+								},
+								{
+									"key": "format",
+									"value": "json"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "traffic/yearly-avg/v1",
+			"item": [
+				{
+					"name": "200: OK",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://ga1wu9p0i0.execute-api.us-east-1.amazonaws.com/dev/traffic/yearly-avg/v1?suburbs=Liverpool,Hornsby,Sydney&startYear=2006&endYear=2020",
+							"protocol": "https",
+							"host": [
+								"ga1wu9p0i0",
+								"execute-api",
+								"us-east-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"dev",
+								"traffic",
+								"yearly-avg",
+								"v1"
+							],
+							"query": [
+								{
+									"key": "suburbs",
+									"value": "Liverpool,Hornsby,Sydney"
+								},
+								{
+									"key": "startYear",
+									"value": "2006"
+								},
+								{
+									"key": "endYear",
+									"value": "2020"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "400: Suburb is required",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(400);\r",
+									"    var res = JSON.parse(pm.response.text())\r",
+									"    pm.expect(res.error).to.eql(\"Suburb is required\");\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://ga1wu9p0i0.execute-api.us-east-1.amazonaws.com/dev/traffic/yearly-avg/v1?suburbs=&startYear=2006&endYear=2020",
+							"protocol": "https",
+							"host": [
+								"ga1wu9p0i0",
+								"execute-api",
+								"us-east-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"dev",
+								"traffic",
+								"yearly-avg",
+								"v1"
+							],
+							"query": [
+								{
+									"key": "suburbs",
+									"value": ""
+								},
+								{
+									"key": "startYear",
+									"value": "2006"
+								},
+								{
+									"key": "endYear",
+									"value": "2020"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "400: startYear cannot be after endYear",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(400);\r",
+									"    var res = JSON.parse(pm.response.text())\r",
+									"    pm.expect(res.error).to.eql(\"startYear cannot be after endYear!\");\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://ga1wu9p0i0.execute-api.us-east-1.amazonaws.com/dev/traffic/yearly-avg/v1?suburbs=Liverpool,Hornsby,Sydney&startYear=2020&endYear=2008",
+							"protocol": "https",
+							"host": [
+								"ga1wu9p0i0",
+								"execute-api",
+								"us-east-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"dev",
+								"traffic",
+								"yearly-avg",
+								"v1"
+							],
+							"query": [
+								{
+									"key": "suburbs",
+									"value": "Liverpool,Hornsby,Sydney"
+								},
+								{
+									"key": "startYear",
+									"value": "2020"
+								},
+								{
+									"key": "endYear",
+									"value": "2008"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "traffic/rank/v1",
+			"item": [
+				{
+					"name": "200: OK",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "https://ga1wu9p0i0.execute-api.us-east-1.amazonaws.com/dev/traffic/rank/v1?suburb=Liverpool",
+							"protocol": "https",
+							"host": [
+								"ga1wu9p0i0",
+								"execute-api",
+								"us-east-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"dev",
+								"traffic",
+								"rank",
+								"v1"
+							],
+							"query": [
+								{
+									"key": "suburb",
+									"value": "Liverpool"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "400: No suburb provided",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(400);\r",
+									"    var res = JSON.parse(pm.response.text())\r",
+									"    pm.expect(res.error).to.eql(\"Suburb is required\");\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "https://ga1wu9p0i0.execute-api.us-east-1.amazonaws.com/dev/traffic/rank/v1?suburb=",
+							"protocol": "https",
+							"host": [
+								"ga1wu9p0i0",
+								"execute-api",
+								"us-east-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"dev",
+								"traffic",
+								"rank",
+								"v1"
+							],
+							"query": [
+								{
+									"key": "suburb",
+									"value": ""
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
